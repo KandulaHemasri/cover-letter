@@ -14,7 +14,7 @@ export default function App() {
   const generate = async (formData) => {
     setLoading(true);
 
-    const res = await fetch('api/generate', {
+    const res = await fetch('/generate', {
       method: "POST",
       body: formData
     });
