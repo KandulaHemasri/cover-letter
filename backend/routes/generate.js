@@ -66,6 +66,80 @@
 
 
 
+// import express from "express";
+// import multer from "multer";
+// import { parsePdf } from "../utils/pdfParser.js";
+// import { GoogleGenAI } from "@google/genai";
+
+// const router = express.Router();
+// const upload = multer();
+
+// router.post("/", upload.single("resume"), async (req, res) => {
+//   try {
+
+//     console.log(req.body)
+//     const { name, role, company, skills } = req.body;
+
+//     let resumeText = "";
+//     if (req.file) {
+//       resumeText = await parsePdf(req.file.buffer);
+//       console.log(resumeText)
+//     }
+
+//     const prompt = `
+// Write a professional cover letter.
+
+// Candidate: ${name}
+// Role: ${role}
+// Company: ${company}
+// Skills: ${skills}
+
+// Resume:
+// ${resumeText}
+
+// Use proper paragraphs and professional tone.
+// `;
+
+
+
+// const ai = new GoogleGenAI({
+//   apiKey: process.env.GEMINI_API_KEY
+// });
+
+
+
+
+//   const response = await ai.models.generateContent({
+//     model: "gemini-3-flash-preview",
+//     contents: prompt,
+//   });
+
+//   console.log(response.text);
+
+
+//     // const data = await response.json();
+
+//     // if (!data.choices?.length) {
+//     //   return res.status(500).json({
+//     //     error: data.error?.message || "AI failed",
+//     //     raw: data
+//     //   });
+//     // }
+
+//     // console.log(data)
+    
+//     res.json({ letter: response.text });
+
+//   } catch (err) {
+//     console.error("ERROR:", err);
+//     res.status(500).json({ error: err.message });
+//   }
+// });
+
+// export default router;
+
+
+
 import express from "express";
 import multer from "multer";
 import { parsePdf } from "../utils/pdfParser.js";
@@ -74,65 +148,75 @@ import { GoogleGenAI } from "@google/genai";
 const router = express.Router();
 const upload = multer();
 
+// Retry helper for 503 overload
+async function generateWithRetry(model, prompt, retries = 3) {
+  try {
+    return await model.generateContent(prompt);
+  } catch (err) {
+    if (err.status === 503 && retries > 0) {
+      console.log("Model overloaded. Retrying...");
+      await new Promise(r => setTimeout(r, 2000));
+      return generateWithRetry(model, prompt, retries - 1);
+    }
+    throw err;
+  }
+}
+
 router.post("/", upload.single("resume"), async (req, res) => {
   try {
+    console.log(req.body);
 
-    console.log(req.body)
     const { name, role, company, skills } = req.body;
 
     let resumeText = "";
     if (req.file) {
       resumeText = await parsePdf(req.file.buffer);
-      console.log(resumeText)
     }
 
     const prompt = `
 Write a professional cover letter.
 
-Candidate: ${name}
+Candidate Name: ${name}
 Role: ${role}
 Company: ${company}
-Skills: ${skills}
+Skills: ${skills || "Not provided"}
 
 Resume:
-${resumeText}
+${resumeText || "No resume provided"}
 
-Use proper paragraphs and professional tone.
+Use proper paragraphs, a professional tone, and end with a strong closing.
 `;
 
-
-
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY
-});
-
-
-
-
-  const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: prompt,
-  });
-
-  console.log(response.text);
-
-
-    // const data = await response.json();
-
-    // if (!data.choices?.length) {
-    //   return res.status(500).json({
-    //     error: data.error?.message || "AI failed",
-    //     raw: data
-    //   });
-    // }
-
-    // console.log(data)
     
-    res.json({ letter: response.text });
+    const ai = new GoogleGenAI({
+      apiKey: process.env.GEMINI_API_KEY,
+    });
+
+    
+    const model = ai.getGenerativeModel({
+      model: "gemini-1.5-flash",
+    });
+
+    
+    const result = await generateWithRetry(model, prompt);
+
+    const letter = result.response.text();
+
+    res.json({ letter });
 
   } catch (err) {
     console.error("ERROR:", err);
-    res.status(500).json({ error: err.message });
+
+    
+    if (err.status === 503) {
+      return res.status(503).json({
+        error: "AI is busy right now. Please try again in a few seconds."
+      });
+    }
+
+    res.status(500).json({
+      error: "Failed to generate cover letter. Please try again."
+    });
   }
 });
 
