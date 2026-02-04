@@ -8,6 +8,7 @@ export default function App() {
   const [letter, setLetter] = useState("");
   const [loading, setLoading] = useState(false);
 
+
   const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 
   const generate = async (formData) => {
