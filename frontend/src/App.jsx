@@ -8,13 +8,14 @@ export default function App() {
   const [letter, setLetter] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const API_URL = "https://cover-letter-g47d.onrender.com";
 
   const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 
   const generate = async (formData) => {
     setLoading(true);
 
-    const res = await fetch('/generate', {
+    const res = await fetch(`${API_URL}/generate`, {
       method: "POST",
       body: formData
     });
