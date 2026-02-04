@@ -8,14 +8,13 @@ export default function App() {
   const [letter, setLetter] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const API_URL ='https://cover-letter-ndhq.vercel.app';
 
   const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 
   const generate = async (formData) => {
     setLoading(true);
 
-    const res = await fetch(`${API_URL}/api/generate`, {
+    const res = await fetch(`https://cover-letter-ndhq.vercel.app/api/generate`, {
       method: "POST",
       body: formData
     });
