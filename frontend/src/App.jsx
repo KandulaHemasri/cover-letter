@@ -14,7 +14,7 @@ export default function App() {
   const generate = async (formData) => {
     setLoading(true);
 
-    const res = await fetch(`https://cover-letter-ndhq.vercel.app/api/generate`, {
+    const res = await fetch('api/generate', {
       method: "POST",
       body: formData
     });
