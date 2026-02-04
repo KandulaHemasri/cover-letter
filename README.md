@@ -1,6 +1,6 @@
 # 🤖 AI Cover Letter Generator
 
-**Live Demo:** https://cover-letter-vpl2.vercel.app/
+**Live Demo:** https://cover-letter-k1k9.vercel.app/
 
 A web-based application that helps users generate **professional and personalized cover letters** using AI.  
 Users can enter job details and upload a resume, and the app intelligently creates a polished cover letter within seconds.
